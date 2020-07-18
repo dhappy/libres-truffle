@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@aragon/test-helpers": "^2.1.0",
+    "@aragon/toolkit": "^0.0.7-beta.1",
+    "cids": "^0.8.3",
+    "truffle-hdwallet-provider": "^1.0.17"
+  }
+}

@@ -3,10 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@aragon/test-helpers": "^2.1.0",
+    "@aragon/toolkit": "^0.0.7-beta.1",
+    "ethereumjs-abi": "^0.6.8",
     "react": "16.11.0",
     "react-dom": "16.11.0",
     "react-scripts": "3.2.0",
-    "web3": "1.2.2"
+    "rxjs": "^6.6.0",
+    "web3": "1.2.2",
+    "web3-eth-abi": "^1.2.10"
   },
   "scripts": {
     "start": "react-scripts start",
