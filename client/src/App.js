@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import CID from 'cids'
 //import { encodeCallScript } from '@aragon/test-helpers/evmScript'
-//import { encodeActCall, exec } from '@aragon/toolkit'
+//import { encodeActCall, execAppMethod } from '@aragon/toolkit'
 import web3EthAbiUntyped, { AbiCoder } from 'web3-eth-abi'
 import abi from 'ethereumjs-abi'
 import Aragon, { ensResolve } from '@aragon/wrapper'
@@ -80,6 +80,7 @@ const resolveEnsDomain = async (domain, opts) => {
 
 const getTransactionPath = async (appAddress, method, params, wrapper) => {
   // Wait for app info to load
+  console.log('HH')
   const apps = await wrapper.apps
     .pipe(
       // If the app list contains a single app, wait for more
@@ -89,7 +90,9 @@ const getTransactionPath = async (appAddress, method, params, wrapper) => {
     )
     .toPromise()
 
-  if (!apps.some((app) => addressesEqual(appAddress, app.proxyAddress))) {
+  console.log(apps)
+
+  if(!apps.some((app) => addressesEqual(appAddress, app.proxyAddress))) {
     throw new Error(`Can't find app ${appAddress}.`)
   }
 
@@ -119,6 +122,8 @@ const initAragonJS = async (
   if(!daoAddress) {
     throw new Error('The provided DAO address is invalid')
   }
+
+  console.log('DAO', daoAddress)
 
   onDaoAddress(daoAddress)
 
@@ -159,9 +164,10 @@ const initAragonJS = async (
 }
 
 const exec = async function ({
-  dao, app, method, params, apm, web3, wsProvider, gasPrice, progressHandler = () => {}
+  dao, app, method, params, apm, web3, wsProvider, gasPrice, progressHandler = console.log
 }) {
-  const wrapper = await initAragonJS(dao, apm.ensRegistryAddress, {
+  const wrapper = await initAragonJS(dao,
+    apm.ensRegistryAddress, {
     ipfsConf: apm.ipfs,
     gasPrice,
     provider: wsProvider || web3.currentProvider,
@@ -211,8 +217,7 @@ export default () => {
 
       const abi = PathMapContract.abi
       const instance = new web3.eth.Contract(
-        abi,
-        deployedNetwork && deployedNetwork.address,
+        abi, deployedNetwork && deployedNetwork.address
       )
 
       // Set web3, accounts, and contract to the state, and then proceed with an
@@ -230,7 +235,7 @@ export default () => {
   useEffect(() => { setup() }, [])
 
   const updateValue = async (value) => {
-    const { accounts, contract } = state
+    const { web3, accounts, contract } = state
 
     console.log(contract)
 
@@ -249,25 +254,47 @@ export default () => {
 
     const mapPath = 'mapPath(string,string,uint8[])'
     const calldata = encodeActCall(mapPath, [path, cid.codec, Array.from(cid.multihash)])
-    console.log(calldata)
-    console.log(abi)
-    console.log(contract.options.address)
+    // console.log(calldata)
+    // console.log(abi)
+    // console.log(contract.options.address)
     const actions = [{ to: contract.options.address, calldata }]
     const script = encodeCallScript(actions)
-    console.log(script)
+    // console.log(script)
 
     const daoAddress = '0x0d053730f22ea05ca901193c5d94a21f7106cfae'
     const votingAddress = '0xdb6c869bbe60131452794e8e278cba01510d23b2'
     const environment = 'rinkeby'
+    const ensRegistryAddress = '0xe7410170f87102df0055eb195163a03b7f2bff4a'
+    const apm = {
+      ipfs: {
+        rpc: {
+          protocol: 'http',
+          host: 'localhost',
+          port: 5001,
+          default: true,
+        },
+        gateway: 'http://localhost:8080/ipfs',
+      },
+      ensRegistryAddress,
+    }
 
-    const tx = await exec(
-      daoAddress,
-      votingAddress,
-      'newVote',
-      [script, `Update: ${path}`],
-      () => {},
-      environment
-    )
+    const tx = await exec({
+      web3,
+      dao: daoAddress,
+      app: votingAddress,
+      method: 'newVote',
+      params: [script, `Update: ${path}`],
+      apm: apm,
+    })
+
+    // const tx = await exec(
+    //   daoAddress,
+    //   votingAddress,
+    //   'newVote',
+    //   [script, `Update: ${path}`],
+    //   () => {},
+    //   environment
+    // )
     //setState({ storageValue: result.toString() })
   }
 
