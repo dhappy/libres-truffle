@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+
+const {
+  resolveDaoAddressOrEnsDomain,
+  getInstalledApps,
+  encodeActCall,
+  execAppMethod,
+  EXECUTE_FUNCTION_NAME,
+} = require('@aragon/toolkit')
+const CID = require('cids')
+
+const main = async () => {
+  const environment = 'rinkeby'
+  const daoName = 'libres'
+
+  let daoAddress;
+  try {
+    console.info('Check if DAO already exists:')
+    daoAddress = await resolveDaoAddressOrEnsDomain(daoName, environment)
+    console.info(`  DAO ${daoName}: ${daoAddress}`)
+  } catch(e) {
+    console.error(`  DAO ${daoName}: ${e}`)
+    process.exit(-10)
+  }
+
+  const apps = await getInstalledApps(daoAddress, environment)
+  const agentApp = apps.find(app => app.name === 'Agent')
+  const agentProxy = agentApp.proxyAddress
+  console.log('Agent app: ', agentProxy)
+
+  const { proxyAddress: votingProxy } = apps.find(
+    (app) => app.name === 'Voting'
+  );
+  console.log('Voting app: ', votingProxy);
+
+  const mapAddress = '0xeA4A51368F271D6e16EC4ccCdF898f5F96282ce5'
+  const mapSignature = 'mapPath(string,string,uint8[])'
+  const path = '/book/by/Aldous Huxlex/Island/'
+  const cid = new CID('QmZb3XL8oT8xRpLJQVzHP76gvPuB7E423CCiXJ61pD6LeS')
+  const calldata = encodeActCall(
+    mapSignature, [path, cid.codec, Array.from(cid.multihash)]
+  )
+
+  const tx = await execAppMethod(
+    daoAddress,
+    agentProxy,
+    EXECUTE_FUNCTION_NAME,
+    [mapAddress, 0, calldata],
+    environment
+  )
+
+  console.info(tx)
+
+  const url =
+    environment === 'mainnet'
+      ? 'https://mainnet.aragon.org/'
+      : environment === 'rinkeby'
+      ? 'http://rinkeby.aragon.org/'
+      : 'http:localhost:3000/'
+
+  console.log(`
+Done! Transaction ${tx.receipt.transactionHash} executed
+Go to
+  ${url}#/${daoAddress}/${votingProxy}
+to verify that the vote was created.
+`)
+
+  process.exit()
+}
+
+main().catch(console.error)
