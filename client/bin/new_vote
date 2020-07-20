@@ -9,10 +9,29 @@ const {
 } = require('@aragon/toolkit')
 const { encodeCallScript } = require('@aragon/test-helpers/evmScript')
 const CID = require('cids')
+var Web3 = require('web3')
+
+const fnamehash = (name) => {
+  let node = '0x0000000000000000000000000000000000000000000000000000000000000000'
+  if(name !== '') {
+    const labels = name.split('/')
+    for(let i = labels.length - 1; i >= 0; i--) {
+      if(!labels[i]) continue
+      console.log(labels[i])
+      node = Web3.utils.sha3(node + Web3.utils.sha3(labels[i]).slice(2), { encoding: 'hex' })
+    }
+  }
+  return node.toString()
+}
 
 const main = async () => {
   const environment = 'rinkeby'
   const daoName = 'libres'
+  //const mapAddress = '0xeA4A51368F271D6e16EC4ccCdF898f5F96282ce5'
+  const mapAddress = '0xA037bc4b324b9F8217f49C8dB8933826c1eC444F'
+  // const environment = 'mainnet'
+  // const daoName = 'll'
+  // const mapAddress = '0xeA4A51368F271D6e16EC4ccCdF898f5F96282ce5'
 
   let daoAddress;
   try {
@@ -34,12 +53,12 @@ const main = async () => {
   );
   console.log('Voting app: ', votingProxy);
 
-  const mapAddress = '0xeA4A51368F271D6e16EC4ccCdF898f5F96282ce5'
   const mapSignature = 'mapPath(string,string,uint8[])'
   const path = '/book/by/Aldous Huxlex/Island/'
+  const pathhash = fnamehash(path)
   const cid = new CID('QmZb3XL8oT8xRpLJQVzHP76gvPuB7E423CCiXJ61pD6LeS')
   const calldata = encodeActCall(
-    mapSignature, [path, cid.codec, Array.from(cid.multihash)]
+    mapSignature, [0, cid.codec, Array.from(cid.multihash)]
   )
   const actions = [{ to: mapAddress, calldata }]
   const script = encodeCallScript(actions)
